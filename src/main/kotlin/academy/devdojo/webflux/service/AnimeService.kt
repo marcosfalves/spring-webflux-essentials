@@ -18,7 +18,6 @@ class AnimeService(val animeRepository: AnimeRepository) {
     fun findById(id:Int): Mono<Anime> {
         return animeRepository.findById(id)
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND, "Anime not found")))
-            .log()
     }
 
 }
