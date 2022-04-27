@@ -11,13 +11,18 @@ import reactor.core.publisher.Mono
 @Service
 class AnimeService(val animeRepository: AnimeRepository) {
 
-    fun findAll(): Flux<Anime> {
-        return animeRepository.findAll()
-    }
+    fun findAll(): Flux<Anime> = animeRepository.findAll()
 
-    fun findById(id:Int): Mono<Anime> {
-        return animeRepository.findById(id)
+    fun findById(id:Int): Mono<Anime> = animeRepository.findById(id)
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND, "Anime not found")))
-    }
+
+    fun create(anime: Anime): Mono<Anime> = animeRepository.save(anime)
+
+    fun update(anime: Anime): Mono<Void> = findById(anime.id)
+            .flatMap{animeRepository.save(anime)}
+            .then()
+
+    fun delete(id: Int): Mono<Void> = findById(id)
+        .flatMap(animeRepository::delete)
 
 }
