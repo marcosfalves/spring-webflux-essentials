@@ -22,6 +22,10 @@ class AnimeController(val animeService: AnimeService) {
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@Valid @RequestBody anime:Anime): Mono<Anime> = animeService.create(anime)
 
+    @PostMapping("/batch")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createAll(@RequestBody animes:List<Anime>): Flux<Anime> = animeService.createAll(animes)
+
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun update(@PathVariable id:Int, @Valid @RequestBody anime:Anime): Mono<Void> = animeService.update(anime.copy(id = id))

@@ -3,6 +3,7 @@ spring:
     url: r2dbc:postgresql://localhost:5432/postgres?schema=anime
     username: root
     password: root
+
 logging:
   level:
     org:
