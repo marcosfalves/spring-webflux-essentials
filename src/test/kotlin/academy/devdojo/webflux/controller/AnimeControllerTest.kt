@@ -69,7 +69,7 @@ internal class AnimeControllerTest() {
     }
 
     @Test
-    fun `findAll returns a Flux of Anime`() {
+    fun `listAll returns a Flux of Anime`() {
         StepVerifier.create(animeController.listAll())
             .expectSubscription()
             .expectNext(anime)
