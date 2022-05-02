@@ -46,6 +46,9 @@ internal class AnimeControllerTest() {
         BDDMockito.`when`(animeServiceMock.create(AnimeCreator.createAnimeToBeSaved()))
             .thenReturn(Mono.just(anime))
 
+        BDDMockito.`when`(animeServiceMock.createAll(listOf(AnimeCreator.createAnimeToBeSaved(), AnimeCreator.createAnimeToBeSaved())))
+            .thenReturn(Flux.just(anime, anime))
+
         BDDMockito.`when`(animeServiceMock.delete(ArgumentMatchers.anyInt()))
             .thenReturn(Mono.empty())
 
@@ -91,6 +94,16 @@ internal class AnimeControllerTest() {
         StepVerifier.create(animeController.create(animeToBeSaved))
             .expectSubscription()
             .expectNext(anime)
+            .verifyComplete()
+    }
+
+    @Test
+    fun `saveAll creates a list of anime when successful`() {
+        val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
+
+        StepVerifier.create(animeController.createBatch(listOf(animeToBeSaved, animeToBeSaved)))
+            .expectSubscription()
+            .expectNext(anime, anime)
             .verifyComplete()
     }
 

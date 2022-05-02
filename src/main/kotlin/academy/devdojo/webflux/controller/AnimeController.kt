@@ -24,7 +24,7 @@ class AnimeController(val animeService: AnimeService) {
 
     @PostMapping("/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createAll(@RequestBody animes:List<Anime>): Flux<Anime> = animeService.createAll(animes)
+    fun createBatch(@RequestBody animes:List<Anime>): Flux<Anime> = animeService.createAll(animes)
 
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -49,6 +49,9 @@ internal class AnimeServiceTest() {
         BDDMockito.`when`(animeRepositoryMock.save(AnimeCreator.createAnimeToBeSaved()))
             .thenReturn(Mono.just(anime))
 
+        BDDMockito.`when`(animeRepositoryMock.saveAll(listOf(AnimeCreator.createAnimeToBeSaved(), AnimeCreator.createAnimeToBeSaved())))
+            .thenReturn(Flux.just(anime, anime))
+
         BDDMockito.`when`(animeRepositoryMock.delete(ArgumentMatchers.any(Anime::class.java)))
             .thenReturn(Mono.empty())
 
@@ -106,6 +109,31 @@ internal class AnimeServiceTest() {
             .expectSubscription()
             .expectNext(anime)
             .verifyComplete()
+    }
+
+    @Test
+    fun `saveAll creates a list of anime when successful`() {
+        val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
+
+        StepVerifier.create(animeService.createAll(listOf(animeToBeSaved, animeToBeSaved)))
+            .expectSubscription()
+            .expectNext(anime, anime)
+            .verifyComplete()
+    }
+
+    @Test
+    fun `saveAll returns Mono error when one of the objects in the list contains null or empty name`() {
+        val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
+
+        BDDMockito.`when`(animeRepositoryMock
+            .saveAll(ArgumentMatchers.anyIterable()))
+            .thenReturn(Flux.just(anime, anime.copy(name = "")))
+
+        StepVerifier.create(animeService.createAll(listOf(animeToBeSaved, animeToBeSaved.copy(name = ""))))
+            .expectSubscription()
+            .expectNext(anime)
+            .expectError(ResponseStatusException::class.java)
+            .verify()
     }
 
     @Test
