@@ -3,6 +3,7 @@ package academy.devdojo.webflux.controller
 import academy.devdojo.webflux.domain.Anime
 import academy.devdojo.webflux.service.AnimeService
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -13,6 +14,7 @@ import javax.validation.Valid
 class AnimeController(val animeService: AnimeService) {
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     fun listAll(): Flux<Anime> = animeService.findAll()
 
     @GetMapping("/{id}")
