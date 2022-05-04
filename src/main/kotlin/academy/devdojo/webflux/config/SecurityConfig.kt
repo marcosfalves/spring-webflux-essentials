@@ -1,14 +1,13 @@
 package academy.devdojo.webflux.config
 
+import academy.devdojo.webflux.service.AppUserDetailsService
 import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.ReactiveAuthenticationManager
+import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
-import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
-import org.springframework.security.core.userdetails.User
-import org.springframework.security.crypto.factory.PasswordEncoderFactories
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.server.SecurityWebFilterChain
 
 @EnableWebFluxSecurity
@@ -34,20 +33,7 @@ class SecurityConfig {
     }
 
     @Bean
-    fun userDetailsService(): MapReactiveUserDetailsService {
-        val passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
-
-        val user = User.withUsername("user")
-            .password(passwordEncoder.encode("devdojo"))
-            .roles("USER")
-            .build()
-
-        val admin = User.withUsername("admin")
-            .password(passwordEncoder.encode("devdojo"))
-            .roles("USER", "ADMIN")
-            .build()
-
-        return MapReactiveUserDetailsService(user, admin)
-    }
+    fun authenticationManager(appUserDetailsService: AppUserDetailsService) : ReactiveAuthenticationManager
+        = UserDetailsRepositoryReactiveAuthenticationManager(appUserDetailsService)
 
 }
