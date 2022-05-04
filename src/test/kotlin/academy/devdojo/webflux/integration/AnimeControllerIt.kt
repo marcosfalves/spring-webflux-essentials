@@ -3,6 +3,7 @@ package academy.devdojo.webflux.integration
 import academy.devdojo.webflux.domain.Anime
 import academy.devdojo.webflux.repository.AnimeRepository
 import academy.devdojo.webflux.util.AnimeCreator
+import academy.devdojo.webflux.util.WebTestClientUtil
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers
@@ -12,6 +13,8 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.security.test.context.support.WithUserDetails
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
@@ -32,14 +35,18 @@ import java.util.concurrent.TimeUnit
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnimeControllerIt {
 
-    val URI_MAPPING = "/animes"
+    companion object {
+        private const val URI_MAPPING = "/animes"
+        private const val ADMIN_USER = "malves"
+        private const val REGULAR_USER = "user"
+    }
 
     //didactic solution to not need to create test database (not used in production)
     @MockBean
     private lateinit var animeRepositoryMock: AnimeRepository
 
     @Autowired
-    private lateinit var testClient: WebTestClient
+    private lateinit var client: WebTestClient
 
     private val anime = AnimeCreator.createValidAnime()
 
@@ -87,8 +94,9 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `listAll returns a Flux of Anime`() {
-        testClient
+    @WithUserDetails(ADMIN_USER)
+    fun `listAll returns a Flux of Anime when user is successfully authenticated and has role ADMIN`() {
+        client
             .get()
             .uri(URI_MAPPING)
             .exchange()
@@ -99,8 +107,28 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `listAll Flavor2 returns a Flux of Anime`() {
-        testClient
+    @WithUserDetails(REGULAR_USER)
+    fun `listAll returns forbidden when user is successfully authenticated and does not have role ADMIN`() {
+        client
+            .get()
+            .uri(URI_MAPPING)
+            .exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `listAll returns unauthorized when user is not authenticated`() {
+        client
+            .get()
+            .uri(URI_MAPPING)
+            .exchange()
+            .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_USER)
+    fun `listAll Flavor2 returns a Flux of Anime when user is successfully authenticated and has role ADMI`() {
+        client
             .get()
             .uri(URI_MAPPING)
             .exchange()
@@ -111,8 +139,9 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `findById returns Mono with anime when it exists`() {
-        testClient
+    @WithUserDetails(REGULAR_USER)
+    fun `findById returns Mono with anime when it exists and user is successfully authenticated and has role USER`() {
+        client
             .get()
             .uri("$URI_MAPPING/{id}", 1)
             .exchange()
@@ -122,11 +151,12 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `findById returns Mono error when anime does not exist`() {
+    @WithUserDetails(REGULAR_USER)
+    fun `findById returns Mono error when anime does not exist and user is successfully authenticated and has role USER`() {
         BDDMockito.`when`(animeRepositoryMock.findById(ArgumentMatchers.anyInt()))
             .thenReturn(Mono.empty())
 
-        testClient
+        client
             .get()
             .uri("$URI_MAPPING/{id}", 1)
             .exchange()
@@ -137,10 +167,11 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `save creates an anime when successful`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `save creates an anime when successful when user is successfully authenticated and has role ADMIN`() {
         val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
 
-        testClient
+        client
             .post()
             .uri(URI_MAPPING)
             .contentType(MediaType.APPLICATION_JSON)
@@ -152,10 +183,11 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `save returns mono error with bad request when name is empty`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `save returns mono error with bad request when name is empty and user is successfully authenticated and has role ADMIN`() {
         val animeToBeSaved = AnimeCreator.createAnimeToBeSaved().copy(name = "")
 
-        testClient
+        client
             .post()
             .uri(URI_MAPPING)
             .contentType(MediaType.APPLICATION_JSON)
@@ -167,10 +199,11 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `saveAll creates a list of anime when successful`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `saveAll creates a list of anime when successful and user is successfully authenticated and has role ADMIN`() {
         val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
 
-        testClient
+        client
             .post()
             .uri("$URI_MAPPING/batch")
             .contentType(MediaType.APPLICATION_JSON)
@@ -183,14 +216,15 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `saveAll returns Mono error when one of the objects in the list contains null or empty name`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `saveAll returns Mono error when one of the objects in the list contains null or empty name and user is successfully authenticated and has role ADMIN`() {
         val animeToBeSaved = AnimeCreator.createAnimeToBeSaved()
 
         BDDMockito.`when`(animeRepositoryMock
             .saveAll(ArgumentMatchers.anyIterable()))
             .thenReturn(Flux.just(anime, anime.copy(name = "")))
 
-        testClient
+        client
             .post()
             .uri("$URI_MAPPING/batch")
             .contentType(MediaType.APPLICATION_JSON)
@@ -202,8 +236,9 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `delete removes the anime when successful`() {
-        testClient
+    @WithUserDetails(ADMIN_USER)
+    fun `delete removes the anime when successful and user is successfully authenticated and has role ADMIN`() {
+        client
             .delete()
             .uri("$URI_MAPPING/{id}", 1)
             .exchange()
@@ -211,11 +246,12 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `delete returns Mono error when anime does not exist`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `delete returns Mono error when anime does not exist and user is successfully authenticated and has role ADMIN`() {
         BDDMockito.`when`(animeRepositoryMock.findById(ArgumentMatchers.anyInt()))
             .thenReturn(Mono.empty())
 
-        testClient
+        client
             .delete()
             .uri("$URI_MAPPING/{id}", 1)
             .exchange()
@@ -227,9 +263,10 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `update save updated anime and returns empty mono when successful`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `update save updated anime and returns empty mono when successful and user is successfully authenticated and has role ADMIN`() {
 
-        testClient
+        client
             .put()
             .uri("$URI_MAPPING/{id}", 1)
             .contentType(MediaType.APPLICATION_JSON)
@@ -240,11 +277,12 @@ class AnimeControllerIt {
     }
 
     @Test
-    fun `update returns Mono error when anime does exist`() {
+    @WithUserDetails(ADMIN_USER)
+    fun `update returns Mono error when anime does exist and user is successfully authenticated and has role ADMIN`() {
         BDDMockito.`when`(animeRepositoryMock.findById(ArgumentMatchers.anyInt()))
             .thenReturn(Mono.empty())
 
-        testClient
+        client
             .put()
             .uri("$URI_MAPPING/{id}", 1)
             .contentType(MediaType.APPLICATION_JSON)
