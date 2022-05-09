@@ -13,6 +13,8 @@ fun main(args: Array<String>) {
 	//println(PasswordEncoderFactories.createDelegatingPasswordEncoder().encode("devdojo"))
 	BlockHound.builder()
 		.allowBlockingCallsInside("java.util.UUID", "randomUUID")
+		.allowBlockingCallsInside("java.io.FilterInputStream", "read")
+		.allowBlockingCallsInside("java.io.InputStream", "readNBytes")
 		.install()
 	runApplication<SpringWebfluxEssentialsApplication>(*args)
 }
