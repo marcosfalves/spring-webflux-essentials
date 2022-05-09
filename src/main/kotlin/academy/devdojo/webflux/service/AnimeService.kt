@@ -4,6 +4,7 @@ import academy.devdojo.webflux.domain.Anime
 import academy.devdojo.webflux.repository.AnimeRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -18,11 +19,21 @@ class AnimeService(val animeRepository: AnimeRepository) {
 
     fun create(anime: Anime): Mono<Anime> = animeRepository.save(anime)
 
+    @Transactional
+    fun createAll(animes: List<Anime>): Flux<Anime> = animeRepository.saveAll(animes)
+        .doOnNext(this::throwResponseStatusExceptionWhenEmptyName)
+
     fun update(anime: Anime): Mono<Void> = findById(anime.id)
             .flatMap{animeRepository.save(anime)}
             .then()
 
     fun delete(id: Int): Mono<Void> = findById(id)
         .flatMap(animeRepository::delete)
+
+    fun throwResponseStatusExceptionWhenEmptyName(anime: Anime) {
+        if (anime.name.isNullOrEmpty()){
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Name")
+        }
+    }
 
 }
